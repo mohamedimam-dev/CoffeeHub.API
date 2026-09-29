@@ -1,4 +1,5 @@
-﻿using CoffeeHub.API.Data;
+﻿using CoffeeHub.API.Common;
+using CoffeeHub.API.Data;
 using CoffeeHub.API.DTOs.Users;
 using CoffeeHub.API.Entities;
 using CoffeeHub.API.Services.Interfaces;
@@ -15,14 +16,15 @@ namespace CoffeeHub.API.Services
             _context = context;
         }
 
-        public async Task<UserDto> AddUserAsync(AddUserDto dto)
+        public async Task<ServiceResult<UserDto>> AddUserAsync(AddUserDto dto)
         {
             bool userExists = await _context.Users
                 .AnyAsync(u => u.Username == dto.Username);
 
             if (userExists)
             {
-                throw new Exception("Username already exists.");
+                return ServiceResult<UserDto>.Conflict(
+                    "Username already exists.");
             }
 
             string passwordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
@@ -49,19 +51,18 @@ namespace CoffeeHub.API.Services
                 IsActive = user.IsActive
             };
 
-            return userDto;
+            return ServiceResult<UserDto>.Success(userDto);
         }
-
-        public async Task<bool> ChangeCredentialsAsync(
+        public async Task<ServiceResult<bool>> ChangeCredentialsAsync(
          int id,
          ChangeCredentialsDto dto)
         {
-            User? user = await _context.Users
-                .FindAsync(id);
+            User? user = await _context.Users.FindAsync(id);
 
             if (user == null)
             {
-                return false;
+                return ServiceResult<bool>.NotFound(
+                    "User not found.");
             }
 
             bool usernameExists = await _context.Users
@@ -71,7 +72,8 @@ namespace CoffeeHub.API.Services
 
             if (usernameExists)
             {
-                throw new Exception("Username already exists.");
+                return ServiceResult<bool>.Conflict(
+                    "Username already exists.");
             }
 
             user.Username = dto.Username;
@@ -81,26 +83,26 @@ namespace CoffeeHub.API.Services
 
             await _context.SaveChangesAsync();
 
-            return true;
+            return ServiceResult<bool>.Success(true);
         }
 
-        public async Task<bool> DeleteUserAsync(int id)
+        public async Task<ServiceResult<bool>> DeleteUserAsync(int id)
         {
             User? user = await _context.Users
                 .FindAsync(id);
 
             if (user == null)
             {
-                return false;
+                return ServiceResult<bool>.NotFound(
+                    "User not found.");
             }
 
             _context.Users.Remove(user);
 
             await _context.SaveChangesAsync();
 
-            return true;
+            return ServiceResult<bool>.Success(true);
         }
-
         public async Task<List<UserDto>> GetAllUsersAsync()
         {
             List<UserDto> users = await _context.Users
@@ -118,14 +120,15 @@ namespace CoffeeHub.API.Services
             return users;
         }
 
-        public async Task<UserDto?> GetUserByIdAsync(int id)
+        public async Task<ServiceResult<UserDto>> GetUserByIdAsync(int id)
         {
             User? user = await _context.Users
                 .FindAsync(id);
 
             if (user == null)
             {
-                return null;
+                return ServiceResult<UserDto>.NotFound(
+                    "User not found.");
             }
 
             UserDto userDto = new UserDto
@@ -137,10 +140,9 @@ namespace CoffeeHub.API.Services
                 IsActive = user.IsActive
             };
 
-            return userDto;
+            return ServiceResult<UserDto>.Success(userDto);
         }
-
-        public async Task<UserDto?> UpdateUserAsync(
+        public async Task<ServiceResult<UserDto>> UpdateUserAsync(
          int id,
          UpdateUserDto dto)
         {
@@ -149,7 +151,8 @@ namespace CoffeeHub.API.Services
 
             if (user == null)
             {
-                return null;
+                return ServiceResult<UserDto>.NotFound(
+                    "User not found.");
             }
 
             user.Name = dto.Name;
@@ -167,7 +170,7 @@ namespace CoffeeHub.API.Services
                 IsActive = user.IsActive
             };
 
-            return userDto;
+            return ServiceResult<UserDto>.Success(userDto);
         }
     }
 }
