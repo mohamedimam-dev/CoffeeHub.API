@@ -1,4 +1,5 @@
-﻿using CoffeeHub.API.Data;
+﻿using CoffeeHub.API.Common;
+using CoffeeHub.API.Data;
 using CoffeeHub.API.DTOs.Products;
 using CoffeeHub.API.Entities;
 using CoffeeHub.API.Services.Interfaces;
@@ -15,8 +16,20 @@ namespace CoffeeHub.API.Services
             _context = context;
         }
 
-        public async Task<ProductDto> AddProductAsync(AddProductDto dto)
+        public async Task<ServiceResult<ProductDto>> AddProductAsync(AddProductDto dto)
         {
+            // 1. Validate input
+            if (dto == null)
+                return ServiceResult<ProductDto>.BadRequest("Product data is required.");
+
+            // 2. Check duplicate product name
+            bool nameExists = await _context.Products
+                .AnyAsync(p => p.Name == dto.Name);
+
+            if (nameExists)
+                return ServiceResult<ProductDto>.Conflict("A product with the same name already exists.");
+
+            // 3. Create product
             Product product = new Product
             {
                 Name = dto.Name,
@@ -26,10 +39,12 @@ namespace CoffeeHub.API.Services
                 IsAvailable = dto.IsAvailable
             };
 
+            // 4. Save
             _context.Products.Add(product);
 
             await _context.SaveChangesAsync();
 
+            // 5. Map to DTO
             ProductDto productDto = new ProductDto
             {
                 Id = product.Id,
@@ -40,23 +55,24 @@ namespace CoffeeHub.API.Services
                 IsAvailable = product.IsAvailable
             };
 
-            return productDto;
+            // 6. Return success
+            return ServiceResult<ProductDto>.Success(productDto);
         }
 
-        public async Task<bool> DeleteProductAsync(int id)
+        public async Task<ServiceResult<bool>> DeleteProductAsync(int id)
         {
             Product? product = await _context.Products.FindAsync(id);
 
             if (product == null)
             {
-                return false;
+                return ServiceResult<bool>.NotFound("Product not found.");
             }
 
             _context.Products.Remove(product);
 
             await _context.SaveChangesAsync();
 
-            return true;
+            return ServiceResult<bool>.Success(true);
         }
 
         public async Task<List<ProductDto>> GetAllProductsAsync()
@@ -77,13 +93,13 @@ namespace CoffeeHub.API.Services
             return products;
         }
 
-        public async Task<ProductDto?> GetProductByIdAsync(int id)
+        public async Task<ServiceResult<ProductDto>> GetProductByIdAsync(int id)
         {
             Product? product = await _context.Products.FindAsync(id);
 
             if (product == null)
             {
-                return null;
+                return ServiceResult<ProductDto>.NotFound("Product not found.");
             }
 
             ProductDto productDto = new ProductDto
@@ -96,10 +112,9 @@ namespace CoffeeHub.API.Services
                 IsAvailable = product.IsAvailable
             };
 
-            return productDto;
+            return ServiceResult<ProductDto>.Success(productDto);
         }
-
-        public async Task<ProductDto?> UpdateProductAsync(
+        public async Task<ServiceResult<ProductDto>> UpdateProductAsync(
          int id,
          UpdateProductDto dto)
         {
@@ -107,7 +122,7 @@ namespace CoffeeHub.API.Services
 
             if (product == null)
             {
-                return null;
+                return ServiceResult<ProductDto>.NotFound("Product not found.");
             }
 
             bool productExists = await _context.Products
@@ -117,7 +132,8 @@ namespace CoffeeHub.API.Services
 
             if (productExists)
             {
-                throw new Exception("Product name already exists.");
+                return ServiceResult<ProductDto>.Conflict(
+                    "Product name already exists.");
             }
 
             product.Name = dto.Name;
@@ -138,7 +154,7 @@ namespace CoffeeHub.API.Services
                 IsAvailable = product.IsAvailable
             };
 
-            return productDto;
+            return ServiceResult<ProductDto>.Success(productDto);
         }
     }
 }
