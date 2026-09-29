@@ -1,17 +1,18 @@
-﻿using CoffeeHub.API.DTOs.Products;
+﻿using CoffeeHub.API.Common;
+using CoffeeHub.API.DTOs.Products;
 
 namespace CoffeeHub.API.Services.Interfaces
 {
     public interface IProductService
     {
-        Task<ProductDto> AddProductAsync(AddProductDto dto);
+        Task<ServiceResult<ProductDto>> AddProductAsync(AddProductDto dto);
 
-        Task<ProductDto?> GetProductByIdAsync(int id);
+        Task<ServiceResult<ProductDto>> GetProductByIdAsync(int id);
 
         Task<List<ProductDto>> GetAllProductsAsync();
 
-        Task<ProductDto?> UpdateProductAsync(int id, UpdateProductDto dto);
+        Task<ServiceResult<ProductDto>> UpdateProductAsync(int id, UpdateProductDto dto);
 
-        Task<bool> DeleteProductAsync(int id);
+        Task<ServiceResult<bool>> DeleteProductAsync(int id);
     }
 }
