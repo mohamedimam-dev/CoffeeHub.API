@@ -1,14 +1,16 @@
 ﻿using CoffeeHub.API.DTOs.Orders;
+using CoffeeHub.API.Common;
+
 
 namespace CoffeeHub.API.Services.Interfaces
 {
     public interface IOrderService
     {
-        Task<OrderDto> AddOrderAsync(
+        Task<ServiceResult<OrderDto>> AddOrderAsync(
         AddOrderDto dto,
         int employeeId);
 
-        Task<OrderDto?> GetOrderByIdAsync(int id);
+        Task<ServiceResult<OrderDto>> GetOrderByIdAsync(int id);
 
         Task<List<OrderDto>> GetAllOrdersAsync();
     }

@@ -1,4 +1,5 @@
-﻿using CoffeeHub.API.Data;
+﻿using CoffeeHub.API.Common;
+using CoffeeHub.API.Data;
 using CoffeeHub.API.DTOs.Orders;
 using CoffeeHub.API.Entities;
 using CoffeeHub.API.Services.Interfaces;
@@ -15,13 +16,14 @@ namespace CoffeeHub.API.Services
             _context = context;
         }
 
-        public async Task<OrderDto> AddOrderAsync(
-        AddOrderDto dto,
-        int employeeId)
+        public async Task<ServiceResult<OrderDto>> AddOrderAsync(
+         AddOrderDto dto,
+         int employeeId)
         {
             if (dto.Items == null || dto.Items.Count == 0)
             {
-                throw new Exception("Order must contain at least one item.");
+                return ServiceResult<OrderDto>.BadRequest(
+                    "Order must contain at least one item.");
             }
 
             bool employeeExists = await _context.Users
@@ -32,7 +34,8 @@ namespace CoffeeHub.API.Services
 
             if (!employeeExists)
             {
-                throw new Exception("Employee not found or inactive.");
+                return ServiceResult<OrderDto>.BadRequest(
+                    "Employee not found or inactive.");
             }
 
             List<int> productIds = dto.Items
@@ -48,7 +51,7 @@ namespace CoffeeHub.API.Services
 
             if (products.Count != productIds.Count)
             {
-                throw new Exception(
+                return ServiceResult<OrderDto>.BadRequest(
                     "One or more products were not found or are unavailable.");
             }
 
@@ -102,10 +105,10 @@ namespace CoffeeHub.API.Services
                     .ToList()
             };
 
-            return orderDto;
+            return ServiceResult<OrderDto>.Success(orderDto);
         }
 
-        public async Task<OrderDto?> GetOrderByIdAsync(int id)
+        public async Task<ServiceResult<OrderDto>> GetOrderByIdAsync(int id)
         {
             Order? order = await _context.Orders
                 .AsNoTracking()
@@ -114,7 +117,8 @@ namespace CoffeeHub.API.Services
 
             if (order == null)
             {
-                return null;
+                return ServiceResult<OrderDto>.NotFound(
+                    "Order not found.");
             }
 
             OrderDto orderDto = new OrderDto
@@ -136,9 +140,8 @@ namespace CoffeeHub.API.Services
                     .ToList()
             };
 
-            return orderDto;
+            return ServiceResult<OrderDto>.Success(orderDto);
         }
-
         public async Task<List<OrderDto>> GetAllOrdersAsync()
         {
             List<OrderDto> orders = await _context.Orders
