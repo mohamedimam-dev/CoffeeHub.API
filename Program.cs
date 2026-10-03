@@ -1,4 +1,6 @@
 using CoffeeHub.API.Data;
+using CoffeeHub.API.Services;
+using CoffeeHub.API.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -7,6 +9,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<CoffeeHubDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("CoffeeHubConnection")));
+
+builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
